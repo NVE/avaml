@@ -68,7 +68,7 @@ def _make_timeline(aps: pd.DataFrame, varsom: pd.DataFrame, days: int) -> (pd.Da
 
     def sub_date(date: dt.date, days_: int):
         if isinstance(date, str):
-            date = dt.date.fromisoformat(date)
+            date = dt.date.fromisoformat(str(date))
         return date - dt.timedelta(days=days_)
 
     if days < 1:
@@ -174,7 +174,7 @@ def fetch_and_prepare_aps_varsom(start_date: dt.date,
             varsom = SnowVarsom.read_csv(varsom_filename)
             if_print("Found downloaded raw Varsom data")
         except FileNotFoundError:
-            if_print("Fetching Varsom data from online resources (ETA 7 minutes)")
+            if_print("Fetching Varsom data from online resources. This may take several minutes.")
             varsom = Connection(prod=True).get_varsom(start_date, stop_date).to_problem_frame()
             if write_cache:
                 varsom.to_csv(varsom_filename, sep=";")
@@ -186,13 +186,15 @@ def fetch_and_prepare_aps_varsom(start_date: dt.date,
             aps = Aps.read_csv(aps_filename)
             if_print("Found downloaded raw APS data")
         except FileNotFoundError:
-            if_print("Fetching APS data from online resources (ETA 10 minutes)")
+            if_print("Fetching APS data from online resources. This may take several minutes.")
             aps = Connection(prod=True).get_aps(start_date, stop_date).to_frame()
             if write_cache:
                 aps.to_csv(aps_filename, sep=";")
 
-    if_print("Preparing data (ETA 9 minutes)")
-    aps, varsom = prepare_aps_varsom(aps, varsom, days)
-    if write_cache:
-        aps.to_csv(prepared_aps_filename, sep=";")
-        varsom.to_csv(prepared_varsom_filename, sep=";")
+        if_print("Preparing data. This may take several minutes.")
+        aps, varsom = prepare_aps_varsom(aps, varsom, days)
+        if write_cache:
+            aps.to_csv(prepared_aps_filename, sep=";")
+            varsom.to_csv(prepared_varsom_filename, sep=";")
+
+    return aps, varsom
