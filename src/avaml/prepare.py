@@ -1,11 +1,11 @@
 import os
-from importlib import metadata
 from typing import Dict, List, TextIO
 
 import pandas as pd
 import numpy as np
 import datetime as dt
 from regobslib import Aps, SnowRegion, SnowVarsom, Connection
+from pkg_resources import get_distribution
 
 
 def _drop_nan_rows(df: pd.DataFrame) -> pd.DataFrame:
@@ -151,7 +151,7 @@ def fetch_and_prepare_aps_varsom(start_date: dt.date,
 
     date_range = f"{start_date.isoformat()}--{stop_date.isoformat()}"
     region_range = "-".join([str(r.value) for r in regions])
-    version = metadata.version("regobslib")
+    version = get_distribution("regobslib").version
     file_suffix = f"{date_range}_{region_range}_{version}"
 
     prepared_varsom_filename = os.path.join(cache_dir, f"prepared_varsom_{file_suffix}.csv")
