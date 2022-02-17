@@ -110,38 +110,37 @@ for problem in problems:
     training_index = Y.index.isin(TRAINING_REGIONS, level="region")
     validation_index = Y.index.isin(VALIDATION_REGIONS, level="region")
     training_X = X.loc[training_index]
-    training_Y = Y.loc[training_index]
+    training_Y = Y.loc[training_index].any(axis=1)
     validation_X = X.loc[validation_index]
-    validation_Y = Y.loc[validation_index]
+    validation_Y = Y.loc[validation_index].any(axis=1)
 
     # Training and validating
     classifier = RandomForestClassifier(n_estimators=10)
     classifier.fit(training_X.values, training_Y)
-    prediction = pd.DataFrame(classifier.predict(validation_X.values),
-                              index=validation_X.index,
-                              columns=training_Y.columns)
+    prediction = pd.Series(classifier.predict(validation_X.values), index=validation_X.index)
 
     # Calculating and storing scores to dict
-    elevation_prediction = prediction.any(axis=1)
-    elevation_ground_truth = validation_Y.any(axis=1)
+    elevation_prediction = prediction
+    elevation_ground_truth = validation_Y
     problem_prediction = elevation_prediction.unstack().any(axis=1)
     problem_ground_truth = elevation_ground_truth.unstack().any(axis=1)
-    training_elevation_ground_truth = training_Y.any(axis=1)
+    training_elevation_ground_truth = training_Y
     training_problem_ground_truth = training_elevation_ground_truth.unstack().any(axis=1)
     elevation_f1 = metrics.f1_score(elevation_ground_truth, elevation_prediction)
     problem_f1 = metrics.f1_score(problem_ground_truth, problem_prediction)
     f1_dict[problem] = {
         ("f1", "per_elevation"): elevation_f1,
         ("f1", "per_forecast"): problem_f1,
-        ("training_n_true", "per_elevation"): training_elevation_ground_truth.sum(),
-        ("training_n_true", "per_forecast"): training_problem_ground_truth.sum(),
-        ("training_n_all", "per_elevation"): len(training_elevation_ground_truth),
-        ("training_n_all", "per_forecast"): len(training_problem_ground_truth),
-        ("validation_n_true", "per_elevation"): elevation_ground_truth.sum(),
-        ("validation_n_true", "per_forecast"): problem_ground_truth.sum(),
-        ("validation_n_all", "per_elevation"): len(elevation_ground_truth),
-        ("validation_n_all", "per_forecast"): len(problem_ground_truth),
+        ("training_n_true", "per_elevation"):
+            f"{training_elevation_ground_truth.sum()}/{len(training_elevation_ground_truth)}",
+        ("training_n_true", "per_forecast"):
+            f"{training_problem_ground_truth.sum()}/{len(training_problem_ground_truth)}",
+        ("validation_n_true", "per_elevation"):
+            f"{elevation_ground_truth.sum()}/{len(elevation_ground_truth)}",
+        ("validation_n_true", "per_forecast"):
+            f"{problem_ground_truth.sum()}/{len(problem_ground_truth)}",
     }
+
 with pd.option_context('display.max_rows', None,
                        'display.max_columns', None,
                        'display.expand_frame_repr', False):
